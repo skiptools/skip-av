@@ -1,0 +1,15 @@
+## skip.tools per-configuration file
+
+#skip:
+#  package: 'skip.ui'
+
+# the blocks to add to the build.gradle.kts
+build:
+  contents:
+    - block: 'dependencies'
+      export: false
+      contents:
+        # https://developer.android.com/jetpack/androidx/releases/media3#declaring_dependencies
+        - 'implementation("androidx.media3:media3-ui:1.2.0")'
+        - 'implementation("androidx.media3:media3-common:1.2.0")'
+        - 'implementation("androidx.media3:media3-exoplayer:1.2.0")'
