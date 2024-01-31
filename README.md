@@ -1,8 +1,38 @@
 # SkipAV
 
-This is a free [Skip](https://skip.tools) Swift/Kotlin library project containing the following modules:
+The SkipAV framework provides a `SwiftUI.VideoPlayer` component for
+Android based on the `androidx.media3` package's ExoPlayer. It can be
+used as a drop-in component to provide video playback controls.
 
-SkipAV
+A subset of the `AVKit` framework is provided.
+
+## Example
+
+```swift
+import SwiftUI
+import AVKit
+
+struct PlayerView: View {
+    @State var player = AVPlayer(playerItem: AVPlayerItem(url: URL(string: "https://skip.tools/assets/introduction.mov")!))
+    @State var isPlaying: Bool = false
+
+    var body: some View {
+        VStack {
+            Button {
+                isPlaying ? player.pause() : player.play()
+                isPlaying = !isPlaying
+                player.seek(to: .zero)
+            } label: {
+                Image(systemName: isPlaying ? "stop" : "play")
+                    .padding()
+            }
+
+            VideoPlayer(player: player)
+        }
+    }
+}
+```
+
 
 ## Building
 
