@@ -12,23 +12,17 @@ import java.io.File
 
 import android.Manifest
 import android.content.pm.PackageManager
-#else
-import AVFoundation
 #endif
 
+#if SKIP
 public protocol AVAudioPlayerDelegate: AnyObject {
     func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool)
     func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?)
 }
 
 open class AVAudioPlayer: NSObject {
-    
-    #if SKIP
     private var mediaPlayer: MediaPlayer?
     private let context = ProcessInfo.processInfo.androidContext
-    #else
-    private var player: AVFoundation.AVAudioPlayer?
-    #endif
     
     weak open var delegate: AVAudioPlayerDelegate?
     
@@ -41,28 +35,17 @@ open class AVAudioPlayer: NSObject {
     
     public init(contentsOf url: URL) throws {
         self._url = url
-        #if SKIP
         super.init()
         try initializeMediaPlayer(url: url)
-        #else
-        super.init()
-        self.player = try AVFoundation.AVAudioPlayer(contentsOf: url)
-        #endif
     }
     
     // MARK: - Untested implementation.
     public init(data: Data) throws {
         self._data = data
-        #if SKIP
         super.init()
         try initializeMediaPlayer(data: data)
-        #else
-        super.init()
-        self.player = try AVFoundation.AVAudioPlayer(data: data)
-        #endif
     }
     
-    #if SKIP
     private func initializeMediaPlayer(url: URL) throws {
         do {
             mediaPlayer = MediaPlayer().apply {
@@ -90,69 +73,39 @@ open class AVAudioPlayer: NSObject {
             throw NSError(domain: "AudioPlayerError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Failed to initialize Media Player (Android): \(error.localizedDescription)"])
         }
     }
-    #endif
     
     open func prepareToPlay() -> Bool {
-        #if SKIP
         return mediaPlayer != nil
-        #else
-//        return player?.prepareToPlay() ?? false
-        return true
-        #endif
     }
     
     open func play() {
-        #if SKIP
         mediaPlayer?.start()
-        #else
-        player?.play()
-        #endif
     }
     
     open func pause() {
-        #if SKIP
         mediaPlayer?.pause()
-        #else
-        player?.pause()
-        #endif
     }
     
     open func stop() {
-        #if SKIP
         mediaPlayer?.stop()
         mediaPlayer?.reset()
-        #else
-        player?.stop()
-        #endif
     }
     
     open var isPlaying: Bool {
-        #if SKIP
         return mediaPlayer?.isPlaying() ?? false
-        #else
-        return player?.isPlaying ?? false
-        #endif
     }
     
     open var duration: TimeInterval {
-        #if SKIP
         return TimeInterval(mediaPlayer?.duration ?? 0) / 1000.0
-        #else
-        return player?.duration ?? 0
-        #endif
     }
     
     open var numberOfLoops: Int {
         get { return _numberOfLoops }
         set {
             _numberOfLoops = newValue
-            #if SKIP
             if newValue == -1 {
                 mediaPlayer?.isLooping = true
             }
-            #else
-            player?.numberOfLoops = newValue
-            #endif
         }
     }
     
@@ -183,32 +136,12 @@ open class AVAudioPlayer: NSObject {
 //        }
 //    }
     
-    open var pan: Double {
-        get { return _pan }
-        set {
-            _pan = newValue
-            #if SKIP
-            // Android doesn't have a direct equivalent to pan
-            #else
-            player?.pan = Float(newValue)
-            #endif
-        }
-    }
-    
     open var currentTime: TimeInterval {
         get {
-            #if SKIP
             return TimeInterval(mediaPlayer?.currentPosition ?? 0) / 1000.0
-            #else
-            return player?.currentTime ?? 0
-            #endif
         }
         set {
-            #if SKIP
             mediaPlayer?.seekTo(Int(newValue * 1000))
-            #else
-            player?.currentTime = newValue
-            #endif
         }
     }
     
@@ -220,61 +153,4 @@ open class AVAudioPlayer: NSObject {
         return _data
     }
 }
-
-
-//public class AVAudioPlayer {
-//#if SKIP
-//    private var mediaPlayer: MediaPlayer? = nil
-//#else
-//    private var player: AVFoundation.AVAudioPlayer?
-//#endif
-//    
-//    public init() {}
-//    
-//    public func play(url: URL) throws {
-//#if SKIP
-//        stopPlaying()
-//        let context = ProcessInfo.processInfo.androidContext
-//        let file = File(context.getExternalFilesDir(nil), "recording.m4a")
-//        let filePath = file.absolutePath
-//        
-//        mediaPlayer = MediaPlayer().apply {
-//            setDataSource(filePath) // originally url.path
-//            prepare()
-//            start()
-//        }
-//#else
-//        player = try AVFoundation.AVAudioPlayer(contentsOf: url)
-//        player?.play()
-//#endif
-//    }
-//    
-//    public func stopPlaying() {
-//#if SKIP
-//        mediaPlayer?.apply {
-//            stop()
-//            release()
-//        }
-//        mediaPlayer = nil
-//#else
-//        player?.stop()
-//#endif
-//    }
-//    
-//    public func pause() {
-//#if SKIP
-//        mediaPlayer?.pause()
-//#else
-//        player?.pause()
-//#endif
-//    }
-//    
-//    public func resume() {
-//#if SKIP
-//        mediaPlayer?.start()
-//#else
-//        player?.play()
-//#endif
-//    }
-//}
-
+#endif
