@@ -32,7 +32,7 @@ public class AVAudioRecorder {
     private var _settings: [String: Any]
     
     @available(*, unavailable)
-    var meteringEnabled = false
+    public var meteringEnabled = false
     
     public init(url: URL, settings: [String: Any]) throws {
         self._url = url

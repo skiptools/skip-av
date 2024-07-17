@@ -126,7 +126,6 @@ open class AVAudioPlayer: NSObject {
         }
     }
     
-    /// NOTE: newValue's Kotlin Float type is confusing the transpiler. Leaving these two properties to be fixed in a future PR.
     open var volume: Double {
         get { return _volume }
         set {
@@ -141,10 +140,6 @@ open class AVAudioPlayer: NSObject {
             _rate = newValue
             mediaPlayer?.playbackParams = mediaPlayer?.playbackParams?.setSpeed(Float(newValue)) ?? android.media.PlaybackParams().setSpeed(Float(newValue))
         }
-    }
-    
-    private func clamp<T: Comparable>(_ value: T, min: T, max: T) -> T {
-        return Swift.min(Swift.max(value, min), max)
     }
     
     open var currentTime: TimeInterval {
