@@ -4,8 +4,8 @@
 // under the terms of the GNU Lesser General Public License 3.0
 // as published by the Free Software Foundation https://fsf.org
 
-import SwiftUI
 #if SKIP
+import Foundation
 import android.media.MediaRecorder
 import android.media.AudioFormat
 import android.media.MediaPlayer
@@ -13,9 +13,7 @@ import java.io.File
 import java.io.FileOutputStream
 import android.Manifest
 import android.content.pm.PackageManager
-#endif
 
-#if SKIP
 public protocol AVAudioRecorderDelegate: AnyObject {
     func audioRecorderDidFinishRecording(_ recorder: AVAudioRecorder, successfully flag: Bool)
     func audioRecorderEncodeErrorDidOccur(_ recorder: AVAudioRecorder, error: Error?)
@@ -26,9 +24,15 @@ public class AVAudioRecorder {
     private let context = ProcessInfo.processInfo.androidContext
     private var filePath: String?
     
+    private var recordingStartTime: Date?
+    private weak var delegate: AVAudioRecorderDelegate?
+    
     private var _isRecording = false
     private var _url: URL
     private var _settings: [String: Any]
+    
+    @available(*, unavailable)
+    var meteringEnabled = false
     
     public init(url: URL, settings: [String: Any]) throws {
         self._url = url
@@ -45,9 +49,8 @@ public class AVAudioRecorder {
             let file = File(_url.path)
             filePath = file.absolutePath
             
+            // Ensures that an empty file exists (along with its parent directory) at the path before we attempt to write to it.
             file.parentFile?.mkdirs()
-            FileOutputStream(file, false).close()
-            
             file.createNewFile()
             
             recorder = MediaRecorder(context).apply {
@@ -67,9 +70,14 @@ public class AVAudioRecorder {
     }
     
     public func record() {
-        prepareToRecord()
-        recorder?.start()
-        _isRecording = true
+        do {
+            prepareToRecord()
+            recorder?.start()
+            _isRecording = true
+            recordingStartTime = Date()
+        } catch {
+            delegate?.audioRecorderEncodeErrorDidOccur(self, error: error)
+        }
     }
     
     public func pause() {
@@ -78,10 +86,18 @@ public class AVAudioRecorder {
     }
     
     public func stop() {
-        recorder?.stop()
-        recorder?.release()
-        recorder = nil
-        _isRecording = false
+        do {
+            recorder?.stop()
+            recorder?.release()
+            recorder = nil
+            _isRecording = false
+            recordingStartTime = nil
+            
+            delegate?.audioRecorderDidFinishRecording(self, successfully: true)
+        } catch {
+            delegate?.audioRecorderDidFinishRecording(self, successfully: false)
+            delegate?.audioRecorderEncodeErrorDidOccur(self, error: error)
+        }
     }
     
     public func deleteRecording() -> Bool {
@@ -111,19 +127,10 @@ public class AVAudioRecorder {
     }
     
     public var currentTime: TimeInterval {
-        return TimeInterval(recorder?.maxAmplitude ?? 0) / 32767.0
-    }
-    
-    // MARK: - Metering
-    
-    private var meteringEnabled = false
-    
-    public var isMeteringEnabled: Bool {
-        get {
-            return meteringEnabled
-        }
-        set {
-            meteringEnabled = newValue
+        if let startTime = recordingStartTime {
+            return startTime.timeIntervalSinceNow
+        } else {
+            return TimeInterval(0)
         }
     }
     
@@ -135,7 +142,7 @@ public class AVAudioRecorder {
         // Android doesn't provide average power, so we'll return peak power
         return Double(recorder?.maxAmplitude ?? 0) / 32767.0
     }
- 
+    
 }
 #endif
 

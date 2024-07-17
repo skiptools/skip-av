@@ -4,17 +4,15 @@
 // under the terms of the GNU Lesser General Public License 3.0
 // as published by the Free Software Foundation https://fsf.org
 
-import SwiftUI
+
 #if SKIP
+import Foundation
 import android.media.AudioFormat
 import android.media.MediaPlayer
 import java.io.File
-
 import android.Manifest
 import android.content.pm.PackageManager
-#endif
 
-#if SKIP
 public protocol AVAudioPlayerDelegate: AnyObject {
     func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool)
     func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?)
@@ -24,12 +22,11 @@ open class AVAudioPlayer: NSObject {
     private var mediaPlayer: MediaPlayer?
     private let context = ProcessInfo.processInfo.androidContext
     
-    weak open var delegate: AVAudioPlayerDelegate?
+    private weak var delegate: AVAudioPlayerDelegate?
     
     private var _numberOfLoops: Int = 0
     private var _volume: Double = 1.0
     private var _rate: Double = 1.0
-    private var _pan: Double = 0.0
     private var _url: URL?
     private var _data: Data?
     
@@ -52,6 +49,7 @@ open class AVAudioPlayer: NSObject {
                 setDataSource(context, android.net.Uri.parse(url.absoluteString))
                 prepare()
             }
+            setupMediaPlayerListeners()
         } catch {
             throw NSError(domain: "AudioPlayerError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Failed to initialize Media Player (Android): \(error.localizedDescription)"])
         }
@@ -69,8 +67,21 @@ open class AVAudioPlayer: NSObject {
                 setDataSource(tempFile.path)
                 prepare()
             }
+            setupMediaPlayerListeners()
         } catch {
             throw NSError(domain: "AudioPlayerError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Failed to initialize Media Player (Android): \(error.localizedDescription)"])
+        }
+    }
+    
+    private func setupMediaPlayerListeners() {
+        mediaPlayer?.setOnCompletionListener { [weak self] _ in
+            guard let self = self else { return }
+            self.delegate?.audioPlayerDidFinishPlaying(self, successfully: true)
+        }
+        mediaPlayer?.setOnErrorListener { [weak self] _, what, extra in
+            guard let self = self else { return true }
+            self.delegate?.audioPlayerDecodeErrorDidOccur(self, error: NSError(domain: "AVAudioPlayerError", code: what, userInfo: ["extra": extra]))
+            return true
         }
     }
     
@@ -79,7 +90,11 @@ open class AVAudioPlayer: NSObject {
     }
     
     open func play() {
-        mediaPlayer?.start()
+        do {
+            mediaPlayer?.start()
+        } catch {
+            delegate?.audioPlayerDecodeErrorDidOccur(self, error: error)
+        }
     }
     
     open func pause() {
@@ -89,6 +104,8 @@ open class AVAudioPlayer: NSObject {
     open func stop() {
         mediaPlayer?.stop()
         mediaPlayer?.reset()
+        
+        delegate?.audioPlayerDidFinishPlaying(self, successfully: true)
     }
     
     open var isPlaying: Bool {
@@ -110,31 +127,25 @@ open class AVAudioPlayer: NSObject {
     }
     
     /// NOTE: newValue's Kotlin Float type is confusing the transpiler. Leaving these two properties to be fixed in a future PR.
-//    open var volume: Double {
-//        get { return _volume }
-//        set {
-//            _volume = newValue
-//            #if SKIP
-//            mediaPlayer?.setVolume(newValue, newValue)
-//            #else
-//            player?.volume = Float(newValue)
-//            #endif
-//        }
-//    }
-//    
-//    open var rate: Double {
-//        get { return _rate }
-//        set {
-//            _rate = newValue
-//            #if SKIP
-//            if android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M {
-//                mediaPlayer?.playbackParams = mediaPlayer?.playbackParams?.setSpeed(newValue) ?? android.media.PlaybackParams().setSpeed(newValue)
-//            }
-//            #else
-//            player?.rate = Float(newValue)
-//            #endif
-//        }
-//    }
+    open var volume: Double {
+        get { return _volume }
+        set {
+            _volume = min(max(newValue, 0.0), 1.0)
+            mediaPlayer?.setVolume(Float(_volume), Float(_volume))
+        }
+    }
+    
+    open var rate: Double {
+        get { return _rate }
+        set {
+            _rate = newValue
+            mediaPlayer?.playbackParams = mediaPlayer?.playbackParams?.setSpeed(Float(newValue)) ?? android.media.PlaybackParams().setSpeed(Float(newValue))
+        }
+    }
+    
+    private func clamp<T: Comparable>(_ value: T, min: T, max: T) -> T {
+        return Swift.min(Swift.max(value, min), max)
+    }
     
     open var currentTime: TimeInterval {
         get {

@@ -4,6 +4,7 @@
 // under the terms of the GNU Lesser General Public License 3.0
 // as published by the Free Software Foundation https://fsf.org
 
+#if SKIP
 import Foundation
 
 // AVAudioSettings constants
@@ -43,3 +44,5 @@ public enum AVAudioQuality: Int, @unchecked Sendable {
     case high = 96
     case max = 127
 }
+
+#endif
