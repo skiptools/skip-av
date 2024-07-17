@@ -22,7 +22,7 @@ open class AVAudioPlayer: NSObject {
     private var mediaPlayer: MediaPlayer?
     private let context = ProcessInfo.processInfo.androidContext
     
-    private weak var delegate: AVAudioPlayerDelegate?
+    public weak var delegate: AVAudioPlayerDelegate?
     
     private var _numberOfLoops: Int = 0
     private var _volume: Double = 1.0

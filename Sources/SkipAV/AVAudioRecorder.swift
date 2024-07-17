@@ -25,7 +25,7 @@ public class AVAudioRecorder {
     private var filePath: String?
     
     private var recordingStartTime: Date?
-    private weak var delegate: AVAudioRecorderDelegate?
+    public weak var delegate: AVAudioRecorderDelegate?
     
     private var _isRecording = false
     private var _url: URL
