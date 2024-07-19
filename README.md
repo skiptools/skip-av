@@ -1,12 +1,26 @@
 # SkipAV
 
-The SkipAV framework provides a `SwiftUI.VideoPlayer` component for
-Android based on the `androidx.media3` package's ExoPlayer. It can be
-used as a drop-in component to provide video playback controls.
+Audio/Video functionality for [Skip](https://skip.tools) apps.
 
-A subset of the `AVKit` framework is provided.
+See what API is included [here](#api-support).
 
-## Example
+## About 
+
+The SkipAV framework provides a small subset of the `AVKit` and `AVFoundation` frameworks
+as well as a `SwiftUI.VideoPlayer` component for
+Android based on the `androidx.media3` package's ExoPlayer.
+
+## Dependencies
+
+SkipAV depends on the [skip](https://source.skip.tools/skip) transpiler plugin and the [SkipUI](https://source.skip.tools/skip-ui) package.
+
+SkipAV is part of the core *SkipStack* and is not intended to be imported directly. The transpiler includes `import skip.av.*` in generated Kotlin for any Swift source that imports the `AVKit` or `AVFoundation` frameworks.
+
+## Contributing
+
+We welcome contributions to SkipAV. The Skip product [documentation](https://skip.tools/docs/contributing/) includes helpful instructions and tips on local Skip library development.
+
+## Examples
 
 ```swift
 import SwiftUI
@@ -37,15 +51,9 @@ This framework also supports the 'AVFoundation.AVAudioRecorder' and
 AVFoundation.AVAudioPlayer' APIs via Android's MediaRecorder and MediaPlayer. 
 These APIs can be used for audio recording and playback.
 
-## Example 2
-
 ```swift
 import SwiftUI
-#if SKIP
-import SkipAV
-#else
 import AVFoundation
-#endif
 
 struct AudioPlayground: View {
     @State var isRecording: Bool = false
@@ -53,53 +61,42 @@ struct AudioPlayground: View {
     
     @State var audioRecorder: AVAudioRecorder?
     @State var audioPlayer: AVAudioPlayer?
-    
-    var captureURL: URL {
-        get {
-#if SKIP
-            let context = ProcessInfo.processInfo.androidContext
-            let file = java.io.File(context.filesDir, "recording.m4a")
-            return URL(fileURLWithPath: file.absolutePath)
-#else
-            return FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)
-                .first!.appendingPathComponent("recording.m4a")
-#endif
-        }
-    }
-    
+
     var body: some View {
-        VStack(spacing: 20) {
-            Button(action: {
+        #if SKIP
+        let context = androidx.compose.ui.platform.LocalContext.current
+        #endif
+        return VStack {
+            Button(isRecording ? "Stop Recording" : "Start Recording") {
                 self.isRecording ? self.stopRecording() : self.startRecording()
-            }) {
-                Text(isRecording ? "Stop Recording" : "Start Recording")
-                    .fontWeight(.bold)
-                    .frame(minWidth: 0, maxWidth: .infinity)
             }
-            .padding()
-            .foregroundColor(.white)
-            .background(isRecording ? Color.red : Color.green)
-            .cornerRadius(10)
-            
-            Button(action: {
+            Button("Play Recording") {
                 try? self.playRecording()
-            }) {
-                Text("Play Recording")
-                    .fontWeight(.bold)
-                    .frame(minWidth: 0, maxWidth: .infinity)
             }
-            .padding()
-            .foregroundColor(.white)
-            .background(Color.blue)
-            .cornerRadius(10)
-            .shadow(radius: 5)
-            
-            if let errorMessage = errorMessage {
+            if let errorMessage {
                 Text(errorMessage)
                     .foregroundColor(.red)
             }
         }
         .padding()
+        #if SKIP
+        .onAppear {
+            requestAudioRecordingPermission(context: context)
+        }
+        #endif
+    }
+
+    var captureURL: URL {
+        get {
+            #if SKIP
+            let context = ProcessInfo.processInfo.androidContext
+            let file = java.io.File(context.filesDir, "recording.m4a")
+            return URL(fileURLWithPath: file.absolutePath)
+            #else
+            return FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)
+                .first!.appendingPathComponent("recording.m4a")
+            #endif
+        }
     }
     
     func startRecording() {
@@ -107,8 +104,7 @@ struct AudioPlayground: View {
             #if !SKIP
             setupAudioSession()
             #endif
-            self.audioRecorder = try AVAudioRecorder(url: captureURL, settings: [AVFormatIDKey: Int(kAudioFormatMPEG4AAC), AVSampleRateKey: 12000, AVNumberOfChannelsKey: 1,
-                                                            AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue])
+            self.audioRecorder = try AVAudioRecorder(url: captureURL, settings: [AVFormatIDKey: Int(kAudioFormatMPEG4AAC), AVSampleRateKey: 12000, AVNumberOfChannelsKey: 1, AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue])
         } catch {
             print(error.localizedDescription)
         }
@@ -128,9 +124,7 @@ struct AudioPlayground: View {
                 return
             }
             audioPlayer = try AVAudioPlayer(contentsOf: captureURL)
-            
             audioPlayer?.play()
-            
             errorMessage = ""
         } catch {
             logger.error("Could not play audio: \(error.localizedDescription)")
@@ -138,7 +132,19 @@ struct AudioPlayground: View {
         }
     }
     
-    #if !SKIP
+    #if SKIP
+    func requestAudioRecordingPermission(context: android.content.Context) {
+        guard let activity = context as? android.app.Activity else {
+            return
+        }
+
+        // You must also list these permissions in your Manifest.xml
+        let permissions = listOf(android.Manifest.permission.RECORD_AUDIO, android.Manifest.permission.READ_EXTERNAL_STORAGE, android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        androidx.core.app.ActivityCompat.requestPermissions(activity, permissions.toTypedArray(), 1)
+    }
+    
+    #else
+    
     func setupAudioSession() {
         let session = AVAudioSession.sharedInstance()
         do {
@@ -152,24 +158,103 @@ struct AudioPlayground: View {
 }
 ```
  
+## API Support
 
+The following table summarizes SkipAV's API support on Android. Anything not listed here is likely not supported. Note that in your iOS-only code - i.e. code within `#if !SKIP` blocks - you can use any Swift API you want. Additionally:
 
-## Building
+Support levels:
 
-This project is a free Swift Package Manager module that uses the
-[Skip](https://skip.tools) plugin to transpile Swift into Kotlin.
-
-Building the module requires that Skip be installed using 
-[Homebrew](https://brew.sh) with `brew install skiptools/skip/skip`.
-This will also install the necessary build prerequisites:
-Kotlin, Gradle, and the Android build tools.
-
-## Testing
-
-The module can be tested using the standard `swift test` command
-or by running the test target for the macOS destination in Xcode,
-which will run the Swift tests as well as the transpiled
-Kotlin JUnit tests in the Robolectric Android simulation environment.
-
-Parity testing can be performed with `skip test`,
-which will output a table of the test results for both platforms.
+  - ✅ – Full
+  - 🟢 – High
+  - 🟡 – Medium 
+  - 🟠 – Low
+  
+<table>
+  <thead><th>Support</th><th>API</th></thead>
+  <tbody>
+    <tr>
+      <td>🟢</td>
+      <td>
+          <details>
+              <summary><code>AVAudioPlayer</code></summary>
+              <ul>
+                  <li><code>init(contentsOf url: URL) throws</code></li>
+                  <li><code>init(data: Data) throws</code></li>
+                  <li><code>func prepareToPlay() -> Bool</code></li>
+                  <li><code>func play()</code></li>
+                  <li><code>func pause()</code></li>
+                  <li><code>func stop()</code></li>
+                  <li><code>var isPlaying: Bool</code></li>
+                  <li><code>var duration: TimeInterval</code></li>
+                  <li><code>var numberOfLoops: Int</code></li>
+                  <li><code>var volume: Double</code></li>
+                  <li><code>var rate: Double</code></li>
+                  <li><code>var currentTime: TimeInterval</code></li>
+                  <li><code>var url: URL?</code></li>
+                  <li><code>var data: Data?</code></li>
+              </ul>
+          </details> 
+      </td>
+    </tr>
+    <tr>
+      <td>🟢</td>
+      <td>
+          <details>
+              <summary><code>AVAudioRecorder</code></summary>
+              <ul>
+                  <li><code>init(url: URL, settings: [String: Any]) throws</code></li>
+                  <li><code>func prepareToRecord() -> Bool</code></li>
+                  <li><code>func record()</code></li>
+                  <li><code>func pause()</code></li>
+                  <li><code>func stop()</code></li>
+                  <li><code>func deleteRecording() -> Bool</code></li>
+                  <li><code>var isRecording: Bool</code></li>
+                  <li><code>var url: URL</code></li>
+                  <li><code>var settings: [String: Any]</code></li>
+                  <li><code>var currentTime: TimeInterval</code></li>
+                  <li><code>func peakPower(forChannel channelNumber: Int) -> Float</code></li>
+                  <li><code>func averagePower(forChannel channelNumber: Int) -> Double</code></li>
+              </ul>
+          </details> 
+      </td>
+    </tr>
+    <tr>
+      <td>🟠</td>
+      <td>
+          <details>
+              <summary><code>AVPlayer</code></summary>
+              <ul>
+                  <li><code>init()</code></li>
+                  <li><code>init(playerItem: AVPlayerItem?)</code></li>
+                  <li><code>init(url: URL)</code></li>
+                  <li><code>func play()</code></li>
+                  <li><code>func pause()</code></li>
+                  <li><code>func seek(to time: CMTime)</code></li>
+              </ul>
+          </details> 
+      </td>
+    </tr>
+   <tr>
+      <td>🟠</td>
+      <td>
+          <details>
+              <summary><code>AVPlayerItem</code></summary>
+              <ul>
+                  <li><code>init(url: URL)</code></li>
+              </ul>
+          </details> 
+      </td>
+    </tr>
+   <tr>
+      <td>🟡</td>
+      <td>
+          <details>
+              <summary><code>VideoPlayer</code></summary>
+              <ul>
+                  <li><code>init(player: AVPlayer?)</code></li>
+              </ul>
+          </details> 
+      </td>
+    </tr>
+  </tbody>
+</table>

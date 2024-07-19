@@ -18,7 +18,7 @@ public protocol AVAudioPlayerDelegate: AnyObject {
     func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?)
 }
 
-open class AVAudioPlayer: NSObject {
+open class AVAudioPlayer: NSObject, KotlinConverting<MediaPlayer?> {
     private var mediaPlayer: MediaPlayer?
     private let context = ProcessInfo.processInfo.androidContext
     
@@ -72,7 +72,16 @@ open class AVAudioPlayer: NSObject {
             throw NSError(domain: "AudioPlayerError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Failed to initialize Media Player (Android): \(error.localizedDescription)"])
         }
     }
-    
+
+    public init(platformValue: MediaPlayer) {
+        mediaPlayer = platformValue
+        setupMediaPlayerListeners()
+    }
+
+    public override func kotlin(nocopy: Bool = false) -> MediaPlayer? {
+        return mediaPlayer
+    }
+
     private func setupMediaPlayerListeners() {
         mediaPlayer?.setOnCompletionListener { [weak self] _ in
             guard let self = self else { return }

@@ -19,7 +19,7 @@ public protocol AVAudioRecorderDelegate: AnyObject {
     func audioRecorderEncodeErrorDidOccur(_ recorder: AVAudioRecorder, error: Error?)
 }
 
-public class AVAudioRecorder {
+public class AVAudioRecorder: KotlinConverting<MediaRecorder?> {
     private var recorder: MediaRecorder?
     private let context = ProcessInfo.processInfo.androidContext
     private var filePath: String?
@@ -43,7 +43,17 @@ public class AVAudioRecorder {
         }
         let _ = prepareToRecord()
     }
-    
+
+    public init(platformValue: MediaRecorder, url: URL) {
+        self._url = url
+        self._settings = [:]
+        recorder = platformValue
+    }
+
+    public override func kotlin(nocopy: Bool = false) -> MediaRecorder? {
+        return recorder
+    }
+
     public func prepareToRecord() -> Bool {
         do {
             let file = File(_url.path)
@@ -142,7 +152,6 @@ public class AVAudioRecorder {
         // Android doesn't provide average power, so we'll return peak power
         return Double(recorder?.maxAmplitude ?? 0) / 32767.0
     }
-    
 }
 #endif
 
