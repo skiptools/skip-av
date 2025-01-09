@@ -27,10 +27,13 @@ public struct AVPlayerItem {
 }
 
 public class AVPlayer {
-    // MediaSession
-    private var playerItems: [AVPlayerItem] = []
+    fileprivate var playerItems: [AVPlayerItem] = []
     #if SKIP
     var mediaPlayer: Player? = nil
+    public var rate: Float = Float(1.0) {
+        // cannot set to zero or else java.lang.IllegalArgumentException from androidx.media3.common.util.Assertions.checkArgument
+        didSet { mediaPlayer?.setPlaybackSpeed(max(newValue, Float(0.000000000001))) }
+    }
     #endif
 
     public init() {
@@ -63,6 +66,7 @@ public class AVPlayer {
         for item in self.playerItems {
             mediaPlayer.addMediaItem(item.mediaItem)
         }
+        mediaPlayer.playWhenReady = true
         mediaPlayer.prepare()
     }
     #endif
@@ -81,7 +85,60 @@ public class AVPlayer {
 
     public func seek(to time: CMTime) {
         #if SKIP
-        // mediaPlayer?.seek(time.timeToSeekTime) // TODO: CMTime
+        mediaPlayer?.seekTo(time.value)
         #endif
+    }
+}
+
+public class AVQueuePlayer : AVPlayer {
+    fileprivate var looping: Bool = false
+
+    public override init(playerItem: AVPlayerItem?) {
+        super.init(playerItem: playerItem)
+    }
+
+    public init(items: [AVPlayerItem]) {
+        super.init(playerItem: nil)
+        self.playerItems = items
+    }
+
+    #if SKIP
+    override func prepare(_ ctx: Context) {
+        super.prepare(ctx)
+        if looping {
+            self.mediaPlayer?.repeatMode = Player.REPEAT_MODE_ALL
+        }
+    }
+    #endif
+}
+
+
+public class AVPlayerLooper {
+    public let player: AVQueuePlayer
+    public let templateItem: AVPlayerItem
+
+    public init(player: AVQueuePlayer, templateItem: AVPlayerItem) {
+        self.player = player
+        self.templateItem = templateItem
+        self.player.looping = true
+    }
+
+    deinit {
+        // Weird, but this is how AVKit behaves: retain the AVPlayerLooper or else if will stop looping
+        self.player.looping = false
+    }
+
+    // TODO
+    //open var status: AVPlayerLooper.Status { get }
+    //open var error: (any Error)? { get }
+    //open func disableLooping()
+    //open var loopCount: Int { get }
+    //open var loopingPlayerItems: [AVPlayerItem] { get }
+
+    public enum Status : Int {
+        case unknown = 0
+        case ready = 1
+        case failed = 2
+        case cancelled = 3
     }
 }
