@@ -16,7 +16,9 @@ final class SkipAVTests: XCTestCase {
         // this doesn't test that it works, just that the API is there
         let player = AVPlayer(url: videoURL)
         let playerItem = AVPlayerItem(url: videoURL)
+        #if SKIP || os(iOS)
         let playerView = VideoPlayer(player: player)
+        #endif
     }
 }
 
