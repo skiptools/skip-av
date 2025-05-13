@@ -1,6 +1,6 @@
 # SkipAV
 
-Audio/Video functionality for [Skip](https://skip.tools) apps.
+Audio/Video functionality for [Skip Lite](https://skip.tools) apps.
 
 See what API is included [here](#api-support).
 
