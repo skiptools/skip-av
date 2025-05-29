@@ -16,10 +16,6 @@ SkipAV depends on the [skip](https://source.skip.tools/skip) transpiler plugin a
 
 SkipAV is part of the core *SkipStack* and is not intended to be imported directly. The transpiler includes `import skip.av.*` in generated Kotlin for any Swift source that imports the `AVKit` or `AVFoundation` frameworks.
 
-## Contributing
-
-We welcome contributions to SkipAV. The Skip product [documentation](https://skip.tools/docs/contributing/) includes helpful instructions and tips on local Skip library development.
-
 ## Examples
 
 ```swift
@@ -258,6 +254,10 @@ Support levels:
     </tr>
   </tbody>
 </table>
+
+## Contributing
+
+We welcome contributions to SkipAV. The Skip product [documentation](https://skip.tools/docs/contributing/) includes helpful instructions and tips on local Skip library development.
 
 ## License
 

@@ -1,11 +1,6 @@
 // swift-tools-version: 5.9
 // SPDX-License-Identifier: LGPL-3.0-only WITH LGPL-3.0-linking-exception
 import PackageDescription
-import Foundation
-
-// Set SKIP_ZERO=1 to build without Skip libraries
-let zero = ProcessInfo.processInfo.environment["SKIP_ZERO"] != nil
-let skipstone = !zero ? [Target.PluginUsage.plugin(name: "skipstone", package: "skip")] : []
 
 let package = Package(
     name: "skip-av",
@@ -19,7 +14,7 @@ let package = Package(
         .package(url: "https://source.skip.tools/skip-ui.git", from: "1.17.2")
     ],
     targets: [
-        .target(name: "SkipAV", dependencies: (zero ? [] : [.product(name: "SkipUI", package: "skip-ui")]), plugins: skipstone),
-        .testTarget(name: "SkipAVTests", dependencies: ["SkipAV"] + (zero ? [] : [.product(name: "SkipTest", package: "skip")]), resources: [.process("Resources")], plugins: skipstone),
+        .target(name: "SkipAV", dependencies: [.product(name: "SkipUI", package: "skip-ui")], plugins: [.plugin(name: "skipstone", package: "skip")]),
+        .testTarget(name: "SkipAVTests", dependencies: ["SkipAV", .product(name: "SkipTest", package: "skip")], resources: [.process("Resources")], plugins: [.plugin(name: "skipstone", package: "skip")]),
     ]
 )
