@@ -1,9 +1,12 @@
 // Copyright 2023–2025 Skip
 // SPDX-License-Identifier: LGPL-3.0-only WITH LGPL-3.0-linking-exception
 #if !SKIP_BRIDGE
+#if canImport(AVKit)
+@_exported import AVKit
+#elseif SKIP
 public typealias CMTimeValue = Int64
 public typealias CMTimeScale = Int32
-public typealias CMTimeFlags = UInt32
+public typealias CMTimeFlags = Int32 // UInt32 // FIXME: cannot yet bridge UInt32
 public typealias CMTimeEpoch = Int64
 
 /// Time as a rational value, with a time value as the numerator and timescale as the denominator. The structure can represent a specific numeric time in the media timeline, and can also represent nonnumeric values like invalid and indefinite times or positive and negative infinity.
@@ -32,4 +35,5 @@ public struct CMTime : Hashable { // TODO: Comparable
         self.timescale = timescale
     }
 }
+#endif
 #endif
