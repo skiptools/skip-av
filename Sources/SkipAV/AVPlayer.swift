@@ -1,13 +1,14 @@
 // Copyright 2023–2025 Skip
 // SPDX-License-Identifier: LGPL-3.0-only WITH LGPL-3.0-linking-exception
 #if !SKIP_BRIDGE
+#if canImport(AVKit)
+@_exported import AVKit
+#elseif SKIP
 import Foundation
-#if SKIP
 import android.content.Context
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
-#endif
 
 public struct AVPlayerItem {
     let url: URL
@@ -16,31 +17,25 @@ public struct AVPlayerItem {
         self.url = url
     }
 
-    #if SKIP
     var mediaItem: MediaItem {
         MediaItem.fromUri(url.absoluteString)
     }
-    #endif
 }
 
 public class AVPlayer {
     fileprivate var playerItems: [AVPlayerItem] = []
-    #if SKIP
     var mediaPlayer: Player? = nil
     public var rate: Float = Float(1.0) {
         // cannot set to zero or else java.lang.IllegalArgumentException from androidx.media3.common.util.Assertions.checkArgument
         didSet { mediaPlayer?.setPlaybackSpeed(max(newValue, Float(0.000000000001))) }
     }
-    #endif
 
     public init() {
     }
 
-    #if SKIP
     deinit {
         mediaPlayer?.release()
     }
-    #endif
 
     public init(playerItem: AVPlayerItem?) {
         if let playerItem = playerItem {
@@ -52,7 +47,6 @@ public class AVPlayer {
         self.init(playerItem: AVPlayerItem(url: url))
     }
 
-    #if SKIP
     func prepare(_ ctx: Context) {
         guard mediaPlayer == nil else {
             return
@@ -66,31 +60,31 @@ public class AVPlayer {
         mediaPlayer.playWhenReady = true
         mediaPlayer.prepare()
     }
-    #endif
 
     public func play() {
-        #if SKIP
         let _ = mediaPlayer?.play()
-        #endif
     }
 
     public func pause() {
-        #if SKIP
         let _ = mediaPlayer?.pause()
-        #endif
     }
 
     public func seek(to time: CMTime) {
-        #if SKIP
         mediaPlayer?.seekTo(time.value)
-        #endif
     }
 }
 
 public class AVQueuePlayer : AVPlayer {
     fileprivate var looping: Bool = false
 
+    // SKIP @nobridge
     public override init(playerItem: AVPlayerItem?) {
+        super.init(playerItem: playerItem)
+    }
+
+    // work around https://github.com/skiptools/skip-bridge/issues/86
+    @available(*, deprecated, message: "use version without unusedp flag")
+    public init(playerItem: AVPlayerItem?, _ unusedp: Bool = false) {
         super.init(playerItem: playerItem)
     }
 
@@ -99,14 +93,13 @@ public class AVQueuePlayer : AVPlayer {
         self.playerItems = items
     }
 
-    #if SKIP
+    // SKIP @nobridge
     override func prepare(_ ctx: Context) {
         super.prepare(ctx)
         if looping {
             self.mediaPlayer?.repeatMode = Player.REPEAT_MODE_ALL
         }
     }
-    #endif
 }
 
 
@@ -140,4 +133,4 @@ public class AVPlayerLooper {
     }
 }
 #endif
-
+#endif

@@ -1,7 +1,9 @@
 // Copyright 2023–2025 Skip
 // SPDX-License-Identifier: LGPL-3.0-only WITH LGPL-3.0-linking-exception
 #if !SKIP_BRIDGE
-#if SKIP
+#if canImport(AVKit)
+@_exported import AVKit
+#elseif SKIP
 import Foundation
 
 // MARK: - CoreAudioTypes
@@ -71,4 +73,3 @@ public typealias AudioChannelFlags = Int32
 
 #endif
 #endif
-

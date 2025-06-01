@@ -1,7 +1,7 @@
 ## skip.tools per-configuration file
 
-#skip:
-#  package: 'skip.av'
+skip:
+  bridging: true
 
 # the blocks to add to the settings.gradle.kts
 settings:
@@ -13,8 +13,9 @@ settings:
             - block: 'create("libs")'
               contents:
                 # https://developer.android.com/jetpack/androidx/releases/media3#declaring_dependencies
-                - 'version("androidx-media", "1.5.1")'
+                - 'version("androidx-media", "1.7.1")'
                 - 'library("androidx-media-ui", "androidx.media3", "media3-ui").versionRef("androidx-media")'
+                - 'library("androidx-media-compose", "androidx.media3", "media3-ui-compose").versionRef("androidx-media")'
                 - 'library("androidx-media-common", "androidx.media3", "media3-common").versionRef("androidx-media")'
                 - 'library("androidx-media-exoplayer", "androidx.media3", "media3-exoplayer").versionRef("androidx-media")'
 
@@ -26,6 +27,6 @@ build:
       export: false
       contents:
         - 'api(libs.androidx.media.ui)'
+        - 'api(libs.androidx.media.compose)'
         - 'api(libs.androidx.media.common)'
         - 'api(libs.androidx.media.exoplayer)'
-

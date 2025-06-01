@@ -1,7 +1,9 @@
 // Copyright 2023–2025 Skip
 // SPDX-License-Identifier: LGPL-3.0-only WITH LGPL-3.0-linking-exception
 #if !SKIP_BRIDGE
-#if SKIP
+#if canImport(AVKit)
+@_exported import AVKit
+#elseif SKIP
 import Foundation
 import android.media.AudioFormat
 import android.media.MediaPlayer
@@ -14,31 +16,39 @@ public protocol AVAudioPlayerDelegate: AnyObject {
     func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?)
 }
 
-open class AVAudioPlayer: NSObject, KotlinConverting<MediaPlayer?> {
+#if SKIP
+// Cannot use typealias NSObject = java.lang.Object because it breaks the bridge generation
+//public typealias AVObjectBase = NSObject
+public protocol AVObjectBase { }
+#else
+public typealias AVObjectBase = NSObject
+#endif
+
+open class AVAudioPlayer: AVObjectBase, KotlinConverting<MediaPlayer?> {
     private var mediaPlayer: MediaPlayer?
     private let context = ProcessInfo.processInfo.androidContext
-    
+
     public weak var delegate: AVAudioPlayerDelegate?
-    
+
     private var _numberOfLoops: Int = 0
     private var _volume: Double = 1.0
     private var _rate: Double = 1.0
     private var _url: URL?
     private var _data: Data?
-    
+
     public init(contentsOf url: URL) throws {
         self._url = url
         super.init()
         try initializeMediaPlayer(url: url)
     }
-    
+
     // MARK: - Untested implementation.
     public init(data: Data) throws {
         self._data = data
         super.init()
         try initializeMediaPlayer(data: data)
     }
-    
+
     private func initializeMediaPlayer(url: URL) throws {
         do {
             mediaPlayer = MediaPlayer().apply {
@@ -50,7 +60,7 @@ open class AVAudioPlayer: NSObject, KotlinConverting<MediaPlayer?> {
             throw NSError(domain: "AudioPlayerError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Failed to initialize Media Player (Android): \(error.localizedDescription)"])
         }
     }
-    
+
     // MARK: - Untested implementation.
     private func initializeMediaPlayer(data: Data) throws {
         do {
@@ -69,11 +79,13 @@ open class AVAudioPlayer: NSObject, KotlinConverting<MediaPlayer?> {
         }
     }
 
+    // SKIP @nobridge
     public init(platformValue: MediaPlayer) {
         mediaPlayer = platformValue
         setupMediaPlayerListeners()
     }
 
+    // SKIP @nobridge
     public override func kotlin(nocopy: Bool = false) -> MediaPlayer? {
         return mediaPlayer
     }
@@ -89,11 +101,11 @@ open class AVAudioPlayer: NSObject, KotlinConverting<MediaPlayer?> {
             return true
         }
     }
-    
+
     open func prepareToPlay() -> Bool {
         return mediaPlayer != nil
     }
-    
+
     open func play() {
         do {
             mediaPlayer?.start()
@@ -101,26 +113,26 @@ open class AVAudioPlayer: NSObject, KotlinConverting<MediaPlayer?> {
             delegate?.audioPlayerDecodeErrorDidOccur(self, error: error)
         }
     }
-    
+
     open func pause() {
         mediaPlayer?.pause()
     }
-    
+
     open func stop() {
         mediaPlayer?.stop()
         mediaPlayer?.reset()
         
         delegate?.audioPlayerDidFinishPlaying(self, successfully: true)
     }
-    
+
     open var isPlaying: Bool {
         return mediaPlayer?.isPlaying() ?? false
     }
-    
+
     open var duration: TimeInterval {
         return TimeInterval(mediaPlayer?.duration ?? 0) / 1000.0
     }
-    
+
     open var numberOfLoops: Int {
         get { return _numberOfLoops }
         set {
@@ -130,7 +142,7 @@ open class AVAudioPlayer: NSObject, KotlinConverting<MediaPlayer?> {
             }
         }
     }
-    
+
     open var volume: Double {
         get { return _volume }
         set {
@@ -138,7 +150,7 @@ open class AVAudioPlayer: NSObject, KotlinConverting<MediaPlayer?> {
             mediaPlayer?.setVolume(Float(_volume), Float(_volume))
         }
     }
-    
+
     open var rate: Double {
         get { return _rate }
         set {
@@ -146,7 +158,7 @@ open class AVAudioPlayer: NSObject, KotlinConverting<MediaPlayer?> {
             mediaPlayer?.playbackParams = mediaPlayer?.playbackParams?.setSpeed(Float(newValue)) ?? android.media.PlaybackParams().setSpeed(Float(newValue))
         }
     }
-    
+
     open var currentTime: TimeInterval {
         get {
             return TimeInterval(mediaPlayer?.currentPosition ?? 0) / 1000.0
@@ -155,15 +167,14 @@ open class AVAudioPlayer: NSObject, KotlinConverting<MediaPlayer?> {
             mediaPlayer?.seekTo(Int(newValue * 1000))
         }
     }
-    
+
     open var url: URL? {
         return _url
     }
-    
+
     open var data: Data? {
         return _data
     }
 }
 #endif
 #endif
-
