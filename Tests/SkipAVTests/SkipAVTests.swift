@@ -8,7 +8,14 @@ import AVKit
 
 let logger: Logger = Logger(subsystem: "SkipAV", category: "Tests")
 
-@available(macOS 13, *)
+// Needs to be run on the main thread:
+// https://developer.android.com/media/media3/exoplayer/hello-world#a-note-on-threading
+//
+// or else:
+// java.lang.IllegalStateException: Player is accessed on the wrong thread.
+// Current thread: 'Instr: androidx.test.runner.AndroidJUnitRunner'
+//
+// SKIP INSERT: @androidx.test.annotation.UiThreadTest
 final class SkipAVTests: XCTestCase {
     let videoURL = URL(string: "http://skip.tools/assets/introduction.mov")!
 
