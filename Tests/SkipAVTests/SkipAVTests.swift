@@ -18,7 +18,7 @@ final class SkipAVTests: XCTestCase {
         let playerItem = AVPlayerItem(url: videoURL)
         let player = AVPlayer(playerItem: playerItem)
         XCTAssertEqual(playerItem, player.currentItem)
-        player.volume = 1.0
+        player.volume = Float(1.0)
 
         #if SKIP || os(iOS)
         let playerView = VideoPlayer(player: player)
