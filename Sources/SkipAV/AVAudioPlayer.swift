@@ -56,6 +56,7 @@ open class AVAudioPlayer: AVObjectBase, KotlinConverting<MediaPlayer?> {
                     var assetPath = url.absoluteString.removePrefix("asset:/")
                     var afd = context.assets.openFd(assetPath)
                     setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
+                    afd.close()
                 } else {
                     setDataSource(context, android.net.Uri.parse(url.absoluteString))
                 }
