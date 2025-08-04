@@ -52,7 +52,13 @@ open class AVAudioPlayer: AVObjectBase, KotlinConverting<MediaPlayer?> {
     private func initializeMediaPlayer(url: URL) throws {
         do {
             mediaPlayer = MediaPlayer().apply {
-                setDataSource(context, android.net.Uri.parse(url.absoluteString))
+                if url.absoluteString.starts(with: "asset:/") {
+                    var assetPath = url.absoluteString.removePrefix("asset:/")
+                    var afd = context.assets.openFd(assetPath)
+                    setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
+                } else {
+                    setDataSource(context, android.net.Uri.parse(url.absoluteString))
+                }
                 prepare()
             }
             setupMediaPlayerListeners()
