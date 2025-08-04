@@ -53,8 +53,8 @@ open class AVAudioPlayer: AVObjectBase, KotlinConverting<MediaPlayer?> {
         do {
             mediaPlayer = MediaPlayer().apply {
                 if url.absoluteString.starts(with: "asset:/") {
-                    var assetPath = url.absoluteString.removePrefix("asset:/")
-                    var afd = context.assets.openFd(assetPath)
+                    let assetPath = url.absoluteString.removePrefix("asset:/")
+                    let afd = context.assets.openFd(assetPath)
                     setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
                     afd.close()
                 } else {
