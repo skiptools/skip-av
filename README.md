@@ -16,7 +16,7 @@ SkipAV depends on the [skip](https://source.skip.tools/skip) transpiler plugin a
 
 SkipAV is part of the core *SkipStack* and is not intended to be imported directly. The transpiler includes `import skip.av.*` in generated Kotlin for any Swift source that imports the `AVKit` or `AVFoundation` frameworks.
 
-## Examples
+## Example
 
 ```swift
 import SwiftUI
@@ -42,6 +42,25 @@ struct PlayerView: View {
     }
 }
 ```
+
+## Event Handling
+
+Some `AVPlayerItem` notifications, such as `.didPlayToEndTimeNotification`
+and `.timeJumpedNotification`, can be handled through the `NotificationCenter`.
+
+For example:
+
+```swift
+VideoPlayer(player: player)
+.onReceive(NotificationCenter.default.publisher(for: AVPlayerItem.didPlayToEndTimeNotification)) { event in
+    logger.info("didPlayToEndTimeNotification: \(event)")
+}
+.onReceive(NotificationCenter.default.publisher(for: AVPlayerItem.timeJumpedNotification)) { event in
+    logger.info("timeJumpedNotification: \(event)")
+}
+```
+
+## AVAudioRecorder
 
 This framework also supports the 'AVFoundation.AVAudioRecorder' and 
 AVFoundation.AVAudioPlayer' APIs via Android's MediaRecorder and MediaPlayer. 
