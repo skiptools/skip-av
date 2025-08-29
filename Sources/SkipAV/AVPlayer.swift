@@ -24,6 +24,30 @@ public struct AVAsset: Equatable {
 }
 
 public struct AVPlayerItem: Equatable {
+    // SKIP @nobridge
+    public static let didPlayToEndTimeNotification = Notification.Name(rawValue: "AVPlayerItemDidPlayToEndTimeNotification")
+
+    @available(*, unavailable)
+    public static let failedToPlayToEndTimeNotification = Notification.Name(rawValue: "AVPlayerItemFailedToPlayToEndTimeNotification")
+
+    // SKIP @nobridge
+    public static let timeJumpedNotification = Notification.Name(rawValue: "AVPlayerItemTimeJumpedNotification")
+
+    // SKIP @nobridge
+    public static let playbackStalledNotification = Notification.Name(rawValue: "AVPlayerItemPlaybackStalledNotification")
+
+    @available(*, unavailable)
+    public static let mediaSelectionDidChangeNotification = Notification.Name(rawValue: "AVPlayerItemMediaSelectionDidChangeNotification")
+
+    @available(*, unavailable)
+    public static let recommendedTimeOffsetFromLiveDidChangeNotification = Notification.Name(rawValue: "AVPlayerItemRecommendedTimeOffsetFromLiveDidChangeNotification")
+
+    @available(*, unavailable)
+    public static let newAccessLogEntryNotification = Notification.Name(rawValue: "AVPlayerItemNewAccessLogEntry")
+
+    @available(*, unavailable)
+    public static let newErrorLogEntryNotification = Notification.Name(rawValue: "AVPlayerItemNewErrorLogEntry")
+
     public let asset: AVAsset
 
     public init(asset: AVAsset) {
@@ -43,6 +67,7 @@ public class AVPlayer {
     // SKIP @nobridge
     public lazy var mediaPlayer: Player = createMediaPlayer()
     private var mediaPlayerCreated = false
+    private let playerEventListener = AVPlayerEventListener()
 
     public var volume: Float {
         get { mediaPlayer.volume }
@@ -86,6 +111,8 @@ public class AVPlayer {
 
     private func createMediaPlayer() -> Player {
         let mediaPlayer = ExoPlayer.Builder(ProcessInfo.processInfo.androidContext).build()
+        playerEventListener.player = self
+        mediaPlayer.addListener(playerEventListener)
         mediaPlayer.playWhenReady = true
         self.mediaPlayerCreated = true
         return mediaPlayer
@@ -212,6 +239,43 @@ public class AVPlayerLooper {
         case ready = 1
         case failed = 2
         case cancelled = 3
+    }
+}
+
+// https://developer.android.com/reference/androidx/media3/common/Player.Listener
+final class AVPlayerEventListener: androidx.media3.common.Player.Listener {
+    weak var player: AVPlayer? = nil
+
+    init() {
+    }
+
+    override func onMediaItemTransition(mediaItem: androidx.media3.common.MediaItem?, reason: Int) {
+        logger.debug("AVPlayerEvenListener.onMediaItemTransition: mediaItem=\(mediaItem) reason=\(reason)")
+    }
+
+    // Listen for metadata updates (important for streams)
+    override func onMediaMetadataChanged(mediaMetadata: androidx.media3.common.MediaMetadata) {
+        logger.debug("AVPlayerEvenListener.onMediaMetadataChanged: title: \(mediaMetadata.title) artist: \(mediaMetadata.artist) albumTitle: \(mediaMetadata.artworkUri) zrtwork URI: \(mediaMetadata.artworkUri)")
+    }
+
+    // Listen for playback state changes
+    override func onPlaybackStateChanged(playbackState: Int) {
+        switch playbackState {
+        case androidx.media3.common.Player.STATE_BUFFERING:
+            logger.debug("AVPlayerEvenListener.onPlaybackStateChanged: STATE_BUFFERING")
+            NotificationCenter.default.post(name: AVPlayerItem.playbackStalledNotification, object: player?.currentItem)
+        case androidx.media3.common.Player.STATE_READY:
+            logger.debug("AVPlayerEvenListener.onPlaybackStateChanged: STATE_READY")
+        case androidx.media3.common.Player.STATE_ENDED:
+            logger.debug("AVPlayerEvenListener.onPlaybackStateChanged: STATE_ENDED")
+            NotificationCenter.default.post(name: AVPlayerItem.didPlayToEndTimeNotification, object: player?.currentItem)
+        }
+    }
+
+    // Listen for position updates
+    override func onPositionDiscontinuity(oldPosition: androidx.media3.common.Player.PositionInfo, newPosition: androidx.media3.common.Player.PositionInfo, reason: /* @Player.DiscontinuityReason */ Int) {
+        logger.debug("AVPlayerEvenListener.onPositionDiscontinuity: oldPosition=\(oldPosition) newPosition=\(newPosition) reason=\(reason)")
+        NotificationCenter.default.post(name: AVPlayerItem.timeJumpedNotification, object: player?.currentItem)
     }
 }
 #endif
