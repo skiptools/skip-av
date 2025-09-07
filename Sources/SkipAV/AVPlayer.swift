@@ -65,7 +65,7 @@ public struct AVPlayerItem: Equatable {
 
 public class AVPlayer {
     // SKIP @nobridge
-    public lazy var mediaPlayer: Player = createMediaPlayer()
+    public lazy var mediaPlayer: Player = createMediaPlayer(player: nil)
     private var mediaPlayerCreated = false
     private let playerEventListener = AVPlayerEventListener()
 
@@ -89,6 +89,11 @@ public class AVPlayer {
     public init() {
     }
 
+    // SKIP @nobridge
+    public init(player: Player) {
+        self.mediaPlayer = createMediaPlayer(player: player)
+    }
+
     deinit {
         // only deinit if we have created the media player
         if mediaPlayerCreated {
@@ -109,8 +114,8 @@ public class AVPlayer {
     func prepare(_ ctx: Context) {
     }
 
-    private func createMediaPlayer() -> Player {
-        let mediaPlayer = ExoPlayer.Builder(ProcessInfo.processInfo.androidContext).build()
+    private func createMediaPlayer(player: Player?) -> Player {
+        let mediaPlayer = player ?? ExoPlayer.Builder(ProcessInfo.processInfo.androidContext).build()
         playerEventListener.player = self
         mediaPlayer.addListener(playerEventListener)
         mediaPlayer.playWhenReady = true
