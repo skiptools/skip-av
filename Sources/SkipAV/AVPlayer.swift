@@ -96,6 +96,13 @@ public class AVPlayer {
         }
     }
 
+    // This enables direct construction using an underlying MediaController
+    // https://developer.android.com/media/media3/session/connect-to-media-app#use-controller : “MediaController implements the Player interface, so you can use the commands defined in the interface to control playback of the connected MediaSession.”
+    // SKIP @nobridge
+    public init(player: Player) {
+        self.mediaPlayer = player
+    }
+
     public init(playerItem: AVPlayerItem?) {
         if let playerItem {
             mediaPlayer.addMediaItem(playerItem.asset.mediaItem)
