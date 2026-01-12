@@ -17,6 +17,14 @@ public protocol AVAudioPlayerDelegate: AnyObject {
 }
 
 #if SKIP
+// Default implementations to make methods optional (matching iOS behavior)
+public extension AVAudioPlayerDelegate {
+    func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {}
+    func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?) {}
+}
+#endif
+
+#if SKIP
 // Cannot use typealias NSObject = java.lang.Object because it breaks the bridge generation
 //public typealias AVObjectBase = NSObject
 public protocol AVObjectBase { }
