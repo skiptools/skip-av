@@ -17,6 +17,14 @@ public protocol AVAudioPlayerDelegate: AnyObject {
 }
 
 #if SKIP
+// Default implementations to make methods optional (matching iOS behavior)
+public extension AVAudioPlayerDelegate {
+    func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {}
+    func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?) {}
+}
+#endif
+
+#if SKIP
 // Cannot use typealias NSObject = java.lang.Object because it breaks the bridge generation
 //public typealias AVObjectBase = NSObject
 public protocol AVObjectBase { }
@@ -32,7 +40,7 @@ open class AVAudioPlayer: AVObjectBase, KotlinConverting<MediaPlayer?> {
 
     private var _numberOfLoops: Int = 0
     private var _volume: Double = 1.0
-    private var _rate: Double = 1.0
+    private var _rate: Float = Float(1.0)
     private var _url: URL?
     private var _data: Data?
 
@@ -158,11 +166,17 @@ open class AVAudioPlayer: AVObjectBase, KotlinConverting<MediaPlayer?> {
         }
     }
 
-    open var rate: Double {
+    open var rate: Float {
         get { return _rate }
         set {
             _rate = newValue
-            mediaPlayer?.playbackParams = mediaPlayer?.playbackParams?.setSpeed(Float(newValue)) ?? android.media.PlaybackParams().setSpeed(Float(newValue))
+            // Android's setPlaybackParams automatically starts playback when speed is non-zero
+            // We need to preserve the playing state and restore it after setting params
+            let wasPlaying = mediaPlayer?.isPlaying() ?? false
+            mediaPlayer?.playbackParams = mediaPlayer?.playbackParams?.setSpeed(newValue) ?? android.media.PlaybackParams().setSpeed(newValue)
+            if !wasPlaying {
+                mediaPlayer?.pause()
+            }
         }
     }
 
