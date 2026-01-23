@@ -1,6 +1,6 @@
 # SkipAV
 
-Audio/Video functionality for [Skip Lite](https://skip.tools) apps.
+Audio/Video functionality for [Skip Lite](https://skip.dev) apps.
 
 See what API is included [here](#api-support).
 
@@ -22,7 +22,7 @@ let package = Package(
         .library(name: "MyProduct", targets: ["MyTarget"]),
     ],
     dependencies: [
-        .package(url: "https://source.skip.tools/skip-av.git", from: "1.0.0"),
+        .package(url: "https://source.skip.dev/skip-av.git", from: "1.0.0"),
     ],
     targets: [
         .target(name: "MyTarget", dependencies: [
@@ -34,7 +34,7 @@ let package = Package(
 
 ## Dependencies
 
-SkipAV depends on the [skip](https://source.skip.tools/skip) transpiler plugin and the [SkipUI](https://source.skip.tools/skip-ui) package.
+SkipAV depends on the [skip](https://source.skip.dev/skip) transpiler plugin and the [SkipUI](https://source.skip.dev/skip-ui) package.
 
 SkipAV is part of the core *SkipStack* and is not intended to be imported directly. The transpiler includes `import skip.av.*` in generated Kotlin for any Swift source that imports the `AVKit` or `AVFoundation` frameworks.
 
@@ -45,7 +45,7 @@ import SwiftUI
 import AVKit
 
 struct PlayerView: View {
-    @State var player = AVPlayer(playerItem: AVPlayerItem(url: URL(string: "https://skip.tools/assets/introduction.mov")!))
+    @State var player = AVPlayer(playerItem: AVPlayerItem(url: URL(string: "https://skip.dev/assets/introduction.mov")!))
     @State var isPlaying: Bool = false
 
     var body: some View {
@@ -298,7 +298,7 @@ Support levels:
 
 ## Contributing
 
-We welcome contributions to SkipAV. The Skip product [documentation](https://skip.tools/docs/contributing/) includes helpful instructions and tips on local Skip library development.
+We welcome contributions to SkipAV. The Skip product [documentation](https://skip.dev/docs/contributing/) includes helpful instructions and tips on local Skip library development.
 
 ## License
 
