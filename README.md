@@ -1,6 +1,6 @@
 # SkipAV
 
-Audio/Video functionality for [Skip Lite](https://skip.dev) apps.
+Audio/Video functionality for [Skip](https://skip.dev) apps.
 
 See what API is included [here](#api-support).
 
@@ -9,6 +9,8 @@ See what API is included [here](#api-support).
 The SkipAV framework provides a small subset of the `AVKit` and `AVFoundation` frameworks
 as well as a `SwiftUI.VideoPlayer` component for
 Android based on the `androidx.media3` package's ExoPlayer.
+
+This framework works in both transpiled Skip Lite and compiled Skip Fuse mode.
 
 ## Setup
 
