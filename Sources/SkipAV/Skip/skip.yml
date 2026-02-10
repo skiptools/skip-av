@@ -13,7 +13,7 @@ settings:
             - block: 'create("libs")'
               contents:
                 # https://developer.android.com/jetpack/androidx/releases/media3#declaring_dependencies
-                - 'version("androidx-media", "1.9.0")'
+                - 'version("androidx-media", "1.9.2")'
                 - 'library("androidx-media-ui", "androidx.media3", "media3-ui").versionRef("androidx-media")'
                 - 'library("androidx-media-compose", "androidx.media3", "media3-ui-compose").versionRef("androidx-media")'
                 - 'library("androidx-media-common", "androidx.media3", "media3-common").versionRef("androidx-media")'
