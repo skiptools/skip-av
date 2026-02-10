@@ -85,6 +85,66 @@ public class AVPlayer {
         }
         return AVPlayerItem(asset: AVAsset(mediaItem: mediaItem))
     }
+    
+    /// Indicates whether playback is currently paused indefinitely, suspended while waiting for appropriate conditions, or in progress.
+    public var timeControlStatus: TimeControlStatus {
+        let playbackState = mediaPlayer.playbackState
+        let playWhenReady = mediaPlayer.playWhenReady
+        
+        // Map Media3 states to AVPlayer.TimeControlStatus
+        switch playbackState {
+        case Player.STATE_IDLE:
+            return .paused
+        case Player.STATE_BUFFERING:
+            // If playWhenReady is true, we're waiting to play
+            return playWhenReady ? .waitingToPlayAtSpecifiedRate : .paused
+        case Player.STATE_READY:
+            // If playWhenReady is true and playback speed > 0, we're playing
+            return playWhenReady ? .playing : .paused
+        case Player.STATE_ENDED:
+            return .paused
+        default:
+            return .paused
+        }
+    }
+    
+    /// Constants that describe the current time control status.
+    public enum TimeControlStatus: Int, Sendable {
+        /// Playback is currently paused indefinitely.
+        case paused = 0
+        
+        /// Playback is currently waiting for appropriate network or other conditions before starting.
+        case waitingToPlayAtSpecifiedRate = 1
+        
+        /// Playback is currently in progress.
+        case playing = 2
+    }
+    
+    /// The reason the player is waiting for playback to continue.
+    ///
+    /// This property is only meaningful when timeControlStatus is waitingToPlayAtSpecifiedRate.
+    public var reasonForWaitingToPlay: WaitingReason? {
+        let playbackState = mediaPlayer.playbackState
+        
+        if playbackState == Player.STATE_BUFFERING && mediaPlayer.playWhenReady {
+            // Check if we're buffering due to network conditions
+            return .toMinimizeStalls
+        }
+        
+        return nil
+    }
+    
+    /// Constants that describe why the player is in a waiting state.
+    public enum WaitingReason: String, Sendable {
+        /// The player is waiting for more data to be buffered before playback can continue.
+        case toMinimizeStalls = "AVPlayerWaitingToMinimizeStallsReason"
+        
+        /// The player is waiting because it requires evaluation of media composition.
+        case evaluatingBufferingRate = "AVPlayerWaitingWhileEvaluatingBufferingRateReason"
+        
+        /// The player is waiting for another item in the queue.
+        case noItemToPlay = "AVPlayerWaitingWithNoItemToPlayReason"
+    }
 
     public init() {
     }
