@@ -17,10 +17,20 @@ import androidx.media3.ui.compose.state.rememberPresentationState
 import androidx.compose.ui.platform.LocalContext
 
 public struct VideoPlayer: View {
+    
     let player: AVPlayer
+    
+    var isFullscreen: Binding<Bool>?
 
     public init(player: AVPlayer) {
         self.player = player
+        self.isFullscreen = nil
+    }
+    
+    /// Android-only API to handle fullscreen button
+    public init(player: AVPlayer, isFullscreen: Binding<Bool>) {
+        self.player = player
+        self.isFullscreen = isFullscreen
     }
 
     // SKIP @nobridge
@@ -39,6 +49,12 @@ public struct VideoPlayer: View {
                 playerView.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
                 playerView.controllerAutoShow = false // hide controls initially, like on iOS
                 playerView.player = player.mediaPlayer
+                // Enable fullscreen button and handle fullscreen transitions
+                if let isFullscreenBinding = self.isFullscreen {
+                    playerView.setControllerOnFullScreenModeChangedListener { isFullScreen in
+                        isFullscreenBinding.wrappedValue = isFullScreen
+                    }
+                }
                 return playerView
             }, modifier: modifier, update: { playerView in
             })
