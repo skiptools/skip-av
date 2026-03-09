@@ -1,4 +1,4 @@
-## skip.tools per-configuration file
+# Skip configuration for SkipAV module
 
 skip:
   bridging: true
