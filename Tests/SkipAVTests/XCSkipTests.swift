@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: LGPL-3.0-only WITH LGPL-3.0-linking-exception
+// Copyright 2025–2026 Skip
+// SPDX-License-Identifier: MPL-2.0
 #if os(macOS) // Skip transpiled tests only run on macOS targets
 import SkipTest
 

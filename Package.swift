@@ -1,5 +1,4 @@
 // swift-tools-version: 5.9
-// SPDX-License-Identifier: LGPL-3.0-only WITH LGPL-3.0-linking-exception
 import PackageDescription
 
 let package = Package(
