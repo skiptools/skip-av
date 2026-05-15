@@ -312,13 +312,13 @@ public class AVPlayerLooper {
 }
 
 // https://developer.android.com/reference/androidx/media3/common/Player.Listener
+// SKIP @nobridge
 final class AVPlayerEventListener: androidx.media3.common.Player.Listener {
     weak var player: AVPlayer? = nil
 
     init() {
     }
 
-    // SKIP @nobridge
     override func onMediaItemTransition(mediaItem: androidx.media3.common.MediaItem?, reason: Int) {
         logger.debug("AVPlayerEvenListener.onMediaItemTransition: mediaItem=\(mediaItem) reason=\(reason)")
     }
