@@ -19,6 +19,29 @@ public struct AVAsset: Equatable {
     // SKIP @nobridge
     let mediaItem: MediaItem
 
+    // SKIP @nobridge
+    init(mediaItem: MediaItem) {
+        self.mediaItem = mediaItem
+    }
+
+    public init(url: URL) {
+        self.mediaItem = MediaItem.fromUri(url.absoluteString)
+    }
+
+    /// The URL that backs this asset, if any.
+    public var url: URL? {
+        guard let uri = mediaItem.localConfiguration?.uri else { return nil }
+        return URL(string: uri.toString())
+    }
+
+    /// The duration declared on the underlying media metadata, or `.indefinite` if unknown.
+    public var duration: CMTime {
+        if let ms = mediaItem.mediaMetadata.durationMs {
+            return CMTime(value: CMTimeValue(ms), timescale: CMTimeScale(1000))
+        }
+        return CMTime.indefinite
+    }
+
     public static func == (lhs: AVAsset, rhs: AVAsset) -> Bool {
         lhs.mediaItem == rhs.mediaItem
     }
@@ -57,6 +80,18 @@ public struct AVPlayerItem: Equatable {
 
     public init(url: URL) {
         self.asset = AVAsset(mediaItem: MediaItem.fromUri(url.absoluteString))
+    }
+
+    /// The duration declared on the underlying media metadata, or `.indefinite` if unknown.
+    public var duration: CMTime {
+        return asset.duration
+    }
+
+    /// Status values for the player item.
+    public enum Status: Int, Sendable {
+        case unknown = 0
+        case readyToPlay = 1
+        case failed = 2
     }
 
     public static func == (lhs: AVPlayerItem, rhs: AVPlayerItem) -> Bool {
@@ -197,7 +232,85 @@ public class AVPlayer {
     }
 
     public func seek(to time: CMTime) {
-        mediaPlayer.seekTo(time.value)
+        mediaPlayer.seekTo(Int64(time.seconds * 1000.0))
+    }
+
+    public func seek(to time: CMTime, completionHandler: @escaping (Bool) -> Void) {
+        mediaPlayer.seekTo(Int64(time.seconds * 1000.0))
+        // Media3's seekTo is synchronous in queueing the request; signal completion immediately.
+        completionHandler(true)
+    }
+
+    public func seek(to time: CMTime, toleranceBefore: CMTime, toleranceAfter: CMTime) {
+        // Media3 does not expose per-seek tolerance; honor the basic seek.
+        seek(to: time)
+    }
+
+    public func seek(to time: CMTime, toleranceBefore: CMTime, toleranceAfter: CMTime, completionHandler: @escaping (Bool) -> Void) {
+        seek(to: time)
+        completionHandler(true)
+    }
+
+    /// The current playback time of the player.
+    public func currentTime() -> CMTime {
+        return CMTime(value: CMTimeValue(mediaPlayer.currentPosition), timescale: CMTimeScale(1000))
+    }
+
+    /// The status of the player.
+    public var status: Status {
+        if mediaPlayer.playerError != nil {
+            return Status.failed
+        }
+        let state = mediaPlayer.playbackState
+        if state == Player.STATE_READY || state == Player.STATE_BUFFERING || state == Player.STATE_ENDED {
+            return Status.readyToPlay
+        }
+        return Status.unknown
+    }
+
+    /// The most recent error that caused playback to fail, if any.
+    public var error: Error? {
+        guard let playerError = mediaPlayer.playerError else { return nil }
+        let message = playerError.message ?? "Player error"
+        return NSError(domain: "AVPlayerErrorDomain", code: Int(playerError.errorCode), userInfo: [NSLocalizedDescriptionKey: message])
+    }
+
+    private var _savedVolumeForMute: Float = Float(1.0)
+    private var _isMutedFlag: Bool = false
+
+    /// Whether the audio output of the player is muted.
+    public var isMuted: Bool {
+        get { return _isMutedFlag }
+        set {
+            if newValue == _isMutedFlag { return }
+            if newValue {
+                _savedVolumeForMute = mediaPlayer.volume
+                mediaPlayer.volume = Float(0.0)
+            } else {
+                mediaPlayer.volume = _savedVolumeForMute
+            }
+            _isMutedFlag = newValue
+        }
+    }
+
+    /// The action the player performs when its current media item ends.
+    public var actionAtItemEnd: ActionAtItemEnd = ActionAtItemEnd.pause
+
+    /// Whether the player automatically waits to minimize stalling. Stored only; informational on Android.
+    public var automaticallyWaitsToMinimizeStalling: Bool = true
+
+    /// Status values for the player.
+    public enum Status: Int, Sendable {
+        case unknown = 0
+        case readyToPlay = 1
+        case failed = 2
+    }
+
+    /// Constants that describe the player's behavior when the current item ends.
+    public enum ActionAtItemEnd: Int, Sendable {
+        case advance = 0
+        case pause = 1
+        case none = 2
     }
 
     public func replaceCurrentItem(with item: AVPlayerItem?) {
