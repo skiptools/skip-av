@@ -12,6 +12,7 @@ import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 
+// SKIP @nobridge
 let logger: Logger = Logger(subsystem: "SkipAV", category: "AVPlayer")
 
 public struct AVAsset: Equatable {
@@ -173,6 +174,7 @@ public class AVPlayer {
         self.init(playerItem: AVPlayerItem(url: url))
     }
 
+    // SKIP @nobridge
     func prepare(_ ctx: Context) {
     }
 
@@ -316,6 +318,7 @@ final class AVPlayerEventListener: androidx.media3.common.Player.Listener {
     init() {
     }
 
+    // SKIP @nobridge
     override func onMediaItemTransition(mediaItem: androidx.media3.common.MediaItem?, reason: Int) {
         logger.debug("AVPlayerEvenListener.onMediaItemTransition: mediaItem=\(mediaItem) reason=\(reason)")
     }
