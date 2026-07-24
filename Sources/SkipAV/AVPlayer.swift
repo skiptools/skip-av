@@ -232,11 +232,24 @@ public class AVPlayer {
     }
 
     public func seek(to time: CMTime) {
-        mediaPlayer.seekTo(Int64(time.seconds * 1000.0))
+        if time.isPositiveInfinity {
+            // AVPlayer treats positiveInfinity as "seek to the end / live edge". Media3 has no infinity
+            // sentinel, so clamp to a known duration (VOD) else jump to the default position (live edge). (#19)
+            let durationMs = mediaPlayer.duration
+            if durationMs > Int64(0) {
+                mediaPlayer.seekTo(durationMs)
+            } else {
+                mediaPlayer.seekToDefaultPosition()
+            }
+        } else if time.isNumeric {
+            mediaPlayer.seekTo(Int64(time.seconds * 1000.0))
+        }
+        // Other non-numeric times (indefinite/invalid/negativeInfinity) have no numeric position;
+        // ignore them rather than seek to a garbage offset, matching AVPlayer's no-op for such seeks.
     }
 
     public func seek(to time: CMTime, completionHandler: @escaping (Bool) -> Void) {
-        mediaPlayer.seekTo(Int64(time.seconds * 1000.0))
+        seek(to: time)
         // Media3's seekTo is synchronous in queueing the request; signal completion immediately.
         completionHandler(true)
     }
