@@ -23,7 +23,10 @@ public class AVAudioRecorder: KotlinConverting<MediaRecorder?> {
     private let context = ProcessInfo.processInfo.androidContext
     private var filePath: String?
 
+    /// The start of the segment that is currently being recorded, or `nil` when not recording.
     private var recordingStartTime: Date?
+    /// The duration of the segments recorded before the most recent `pause()`.
+    private var accumulatedTime: TimeInterval = 0.0
     public weak var delegate: AVAudioRecorderDelegate?
 
     private var _isRecording = false
@@ -93,6 +96,10 @@ public class AVAudioRecorder: KotlinConverting<MediaRecorder?> {
 
     public func pause() {
         recorder?.pause()
+        if let startTime = recordingStartTime {
+            accumulatedTime += Date().timeIntervalSince(startTime)
+        }
+        recordingStartTime = nil
         _isRecording = false
     }
 
@@ -103,6 +110,7 @@ public class AVAudioRecorder: KotlinConverting<MediaRecorder?> {
             recorder = nil
             _isRecording = false
             recordingStartTime = nil
+            accumulatedTime = 0.0
 
             delegate?.audioRecorderDidFinishRecording(self, successfully: true)
         } catch {
@@ -138,11 +146,10 @@ public class AVAudioRecorder: KotlinConverting<MediaRecorder?> {
     }
 
     public var currentTime: TimeInterval {
-        if let startTime = recordingStartTime {
-            return startTime.timeIntervalSinceNow
-        } else {
-            return TimeInterval(0)
+        guard let startTime = recordingStartTime else {
+            return accumulatedTime
         }
+        return accumulatedTime + Date().timeIntervalSince(startTime)
     }
 
     public func peakPower(forChannel channelNumber: Int) -> Float {
