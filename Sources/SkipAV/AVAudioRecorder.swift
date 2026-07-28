@@ -33,8 +33,11 @@ public class AVAudioRecorder: KotlinConverting<MediaRecorder?> {
     private var _url: URL
     private var _settings: [String: Any]
 
-    @available(*, unavailable)
-    public var meteringEnabled = false
+    /// Turns level metering on or off. Metering is disabled by default, matching AVFoundation.
+    public var isMeteringEnabled = false
+
+    /// The amplitude sampled by the most recent `updateMeters()` call.
+    private var meterAmplitude: Int = 0
 
     public init(url: URL, settings: [String: Any]) throws {
         self._url = url
@@ -111,6 +114,7 @@ public class AVAudioRecorder: KotlinConverting<MediaRecorder?> {
             _isRecording = false
             recordingStartTime = nil
             accumulatedTime = 0.0
+            meterAmplitude = 0
 
             delegate?.audioRecorderDidFinishRecording(self, successfully: true)
         } catch {
@@ -152,13 +156,25 @@ public class AVAudioRecorder: KotlinConverting<MediaRecorder?> {
         return accumulatedTime + Date().timeIntervalSince(startTime)
     }
 
+    /// Refreshes the values returned by `peakPower(forChannel:)` and `averagePower(forChannel:)`.
+    ///
+    /// `MediaRecorder.getMaxAmplitude()` reports the maximum amplitude sampled since it was last
+    /// called and resets on every read, so the value is sampled once here and cached. Reading it
+    /// directly from each accessor would make whichever accessor ran second observe silence.
+    public func updateMeters() {
+        guard isMeteringEnabled else {
+            return
+        }
+        meterAmplitude = recorder?.maxAmplitude ?? 0
+    }
+
     public func peakPower(forChannel channelNumber: Int) -> Float {
-        return AVAudioRecorder.amplitudeToDecibels(recorder?.maxAmplitude ?? 0)
+        return AVAudioRecorder.amplitudeToDecibels(meterAmplitude)
     }
 
     public func averagePower(forChannel channelNumber: Int) -> Float {
         // Android doesn't provide average power, so we'll return peak power
-        return AVAudioRecorder.amplitudeToDecibels(recorder?.maxAmplitude ?? 0)
+        return AVAudioRecorder.amplitudeToDecibels(meterAmplitude)
     }
 
     /// Converts an `android.media.MediaRecorder` amplitude (0...32767) to the
