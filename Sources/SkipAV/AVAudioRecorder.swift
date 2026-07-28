@@ -30,6 +30,8 @@ public class AVAudioRecorder: KotlinConverting<MediaRecorder?> {
     public weak var delegate: AVAudioRecorderDelegate?
 
     private var _isRecording = false
+    /// Set by `pause()` so that the next `record()` resumes instead of restarting.
+    private var isPaused = false
     private var _url: URL
     private var _settings: [String: Any]
 
@@ -86,23 +88,36 @@ public class AVAudioRecorder: KotlinConverting<MediaRecorder?> {
         }
     }
 
-    public func record() {
+    @discardableResult public func record() -> Bool {
+        if recorder == nil && !prepareToRecord() {
+            return false
+        }
         do {
-            prepareToRecord()
-            recorder?.start()
+            if isPaused {
+                recorder?.resume()
+                isPaused = false
+            } else {
+                recorder?.start()
+            }
             _isRecording = true
             recordingStartTime = Date()
+            return true
         } catch {
             delegate?.audioRecorderEncodeErrorDidOccur(self, error: error)
+            return false
         }
     }
 
     public func pause() {
+        guard _isRecording else {
+            return
+        }
         recorder?.pause()
         if let startTime = recordingStartTime {
             accumulatedTime += Date().timeIntervalSince(startTime)
         }
         recordingStartTime = nil
+        isPaused = true
         _isRecording = false
     }
 
@@ -112,6 +127,7 @@ public class AVAudioRecorder: KotlinConverting<MediaRecorder?> {
             recorder?.release()
             recorder = nil
             _isRecording = false
+            isPaused = false
             recordingStartTime = nil
             accumulatedTime = 0.0
             meterAmplitude = 0
