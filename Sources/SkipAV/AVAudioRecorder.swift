@@ -63,6 +63,27 @@ public class AVAudioRecorder: KotlinConverting<MediaRecorder?> {
         return recorder
     }
 
+    /// Reads a numeric entry from `settings`.
+    ///
+    /// AVFoundation's audio settings are documented as `NSNumber` values, so a caller may
+    /// legitimately pass `44100`, `44100.0`, or a `Float`. Matching only against `Int` silently
+    /// dropped the other two and fell back to the default.
+    private func intSetting(_ key: String) -> Int? {
+        guard let value = _settings[key] else {
+            return nil
+        }
+        if let intValue = value as? Int {
+            return intValue
+        }
+        if let doubleValue = value as? Double {
+            return Int(doubleValue)
+        }
+        if let floatValue = value as? Float {
+            return Int(floatValue)
+        }
+        return nil
+    }
+
     public func prepareToRecord() -> Bool {
         do {
             let file = File(_url.path)
@@ -76,9 +97,9 @@ public class AVAudioRecorder: KotlinConverting<MediaRecorder?> {
                 setAudioSource(MediaRecorder.AudioSource.MIC)
                 setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
                 setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
-                setAudioChannels(2)
-                setAudioSamplingRate(settings["AVSampleRateKey"] as? Int ?? 44100)
-                setAudioEncodingBitRate(settings["AVEncoderBitRateKey"] as? Int ?? 128000)
+                setAudioChannels(intSetting(AVNumberOfChannelsKey) ?? 2)
+                setAudioSamplingRate(intSetting(AVSampleRateKey) ?? 44100)
+                setAudioEncodingBitRate(intSetting(AVEncoderBitRateKey) ?? 128000)
                 setOutputFile(filePath)
                 prepare()
             }
