@@ -153,12 +153,27 @@ public class AVAudioRecorder: KotlinConverting<MediaRecorder?> {
     }
 
     public func peakPower(forChannel channelNumber: Int) -> Float {
-        return Float(recorder?.maxAmplitude ?? 0) / Float(32767.0)
+        return AVAudioRecorder.amplitudeToDecibels(recorder?.maxAmplitude ?? 0)
     }
 
     public func averagePower(forChannel channelNumber: Int) -> Float {
         // Android doesn't provide average power, so we'll return peak power
-        return Float(recorder?.maxAmplitude ?? 0) / Float(32767.0)
+        return AVAudioRecorder.amplitudeToDecibels(recorder?.maxAmplitude ?? 0)
+    }
+
+    /// Converts an `android.media.MediaRecorder` amplitude (0...32767) to the
+    /// decibel scale that AVFoundation's power accessors report, where full
+    /// scale is 0 dB and silence is -160 dB.
+    ///
+    /// Exposed for testing; like `init(platformValue:url:)` this has no iOS counterpart.
+    // SKIP @nobridge
+    public static func amplitudeToDecibels(_ amplitude: Int) -> Float {
+        guard amplitude > 0 else {
+            return Float(-160.0)
+        }
+        // SkipLib provides log10(Double) and log10f(Float), but no log10(Float),
+        // so the conversion is computed in Double and narrowed afterwards.
+        return Float(20.0 * log10(Double(amplitude) / 32767.0))
     }
 }
 #endif
