@@ -156,9 +156,9 @@ public class AVAudioRecorder: KotlinConverting<MediaRecorder?> {
         return Float(recorder?.maxAmplitude ?? 0) / Float(32767.0)
     }
 
-    public func averagePower(forChannel channelNumber: Int) -> Double {
+    public func averagePower(forChannel channelNumber: Int) -> Float {
         // Android doesn't provide average power, so we'll return peak power
-        return Double(recorder?.maxAmplitude ?? 0) / 32767.0
+        return Float(recorder?.maxAmplitude ?? 0) / Float(32767.0)
     }
 }
 #endif
