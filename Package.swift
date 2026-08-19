@@ -1,4 +1,4 @@
-// swift-tools-version: 5.9
+// swift-tools-version: 6.1
 import PackageDescription
 
 let package = Package(
@@ -9,8 +9,8 @@ let package = Package(
         .library(name: "SkipAV", targets: ["SkipAV"]),
     ],
     dependencies: [
-        .package(url: "https://source.skip.tools/skip.git", from: "1.6.36"),
-        .package(url: "https://source.skip.tools/skip-ui.git", from: "1.46.0")
+        .package(url: "https://github.com/skiptools/skip.git", from: "1.6.36"),
+        .package(url: "https://github.com/skiptools/skip-ui.git", from: "1.46.0")
     ],
     targets: [
         .target(name: "SkipAV", dependencies: [.product(name: "SkipUI", package: "skip-ui")], plugins: [.plugin(name: "skipstone", package: "skip")]),
@@ -19,7 +19,7 @@ let package = Package(
 )
 
 if Context.environment["SKIP_BRIDGE"] ?? "0" != "0" {
-    package.dependencies += [.package(url: "https://source.skip.tools/skip-fuse-ui.git", from: "1.0.0")]
+    package.dependencies += [.package(url: "https://github.com/skiptools/skip-fuse-ui.git", from: "1.0.0")]
     package.targets.forEach({ target in
         target.dependencies += [.product(name: "SkipFuseUI", package: "skip-fuse-ui")]
     })
