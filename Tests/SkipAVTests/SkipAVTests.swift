@@ -20,7 +20,7 @@ let logger: Logger = Logger(subsystem: "SkipAV", category: "Tests")
 final class SkipAVTests: XCTestCase {
     let videoURL = URL(string: "http://skip.tools/assets/introduction.mov")!
 
-    public func testSkipAVAPI() throws {
+    @MainActor public func testSkipAVAPI() throws {
         let _ = AVPlayer(url: videoURL)
 
         let playerItem = AVPlayerItem(url: videoURL)
