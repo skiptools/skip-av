@@ -57,6 +57,7 @@ public struct VideoPlayer: View {
                 }
                 return playerView
             }, modifier: modifier, update: { playerView in
+                playerView.player = player.mediaPlayer
             })
         }
     }
