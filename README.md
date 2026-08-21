@@ -90,6 +90,19 @@ This framework also supports the 'AVFoundation.AVAudioRecorder' and
 AVFoundation.AVAudioPlayer' APIs via Android's MediaRecorder and MediaPlayer. 
 These APIs can be used for audio recording and playback.
 
+Some Android-specific behavior is worth noting when recording:
+
+  - Metering follows the AVFoundation sequence: set `isMeteringEnabled`, call
+    `updateMeters()`, then read `peakPower(forChannel:)` or `averagePower(forChannel:)`.
+    Values are in decibels relative to full scale, from `-160.0` for silence to `0.0`
+    at full scale. `MediaRecorder` only reports a peak amplitude, so `averagePower`
+    returns the same value as `peakPower`.
+  - `AVFormatIDKey` is ignored. `MediaRecorder` has no linear PCM output format, so
+    recordings are always AAC in an MPEG-4 container. `AVNumberOfChannelsKey`,
+    `AVSampleRateKey`, and `AVEncoderBitRateKey` are applied.
+  - Recording to the microphone requires the `android.permission.RECORD_AUDIO`
+    permission to have been granted before `AVAudioRecorder` is created.
+
 ```swift
 import SwiftUI
 import AVFoundation
@@ -243,7 +256,7 @@ Support levels:
               <ul>
                   <li><code>init(url: URL, settings: [String: Any]) throws</code></li>
                   <li><code>func prepareToRecord() -> Bool</code></li>
-                  <li><code>func record()</code></li>
+                  <li><code>@discardableResult func record() -> Bool</code></li>
                   <li><code>func pause()</code></li>
                   <li><code>func stop()</code></li>
                   <li><code>func deleteRecording() -> Bool</code></li>
@@ -251,8 +264,10 @@ Support levels:
                   <li><code>var url: URL</code></li>
                   <li><code>var settings: [String: Any]</code></li>
                   <li><code>var currentTime: TimeInterval</code></li>
+                  <li><code>var isMeteringEnabled: Bool</code></li>
+                  <li><code>func updateMeters()</code></li>
                   <li><code>func peakPower(forChannel channelNumber: Int) -> Float</code></li>
-                  <li><code>func averagePower(forChannel channelNumber: Int) -> Double</code></li>
+                  <li><code>func averagePower(forChannel channelNumber: Int) -> Float</code></li>
               </ul>
           </details> 
       </td>
