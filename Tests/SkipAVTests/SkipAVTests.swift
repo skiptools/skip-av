@@ -136,6 +136,30 @@ final class SkipAVTests: XCTestCase {
         #endif
     }
 
+    #if SKIP
+    // SkipAV's AVAudioRecorder is the Android implementation; on iOS the real
+    // AVFoundation type is re-exported, so this conversion only exists here.
+    public func testAudioRecorderAmplitudeToDecibels() throws {
+        // Silence and any invalid amplitude clamp to AVFoundation's floor.
+        XCTAssertEqual(Float(-160.0), AVAudioRecorder.amplitudeToDecibels(0))
+        XCTAssertEqual(Float(-160.0), AVAudioRecorder.amplitudeToDecibels(-1))
+
+        // Full scale is 0 dB. AVFoundation never reports a positive power.
+        let fullScale = AVAudioRecorder.amplitudeToDecibels(32767)
+        XCTAssertTrue(fullScale <= Float(0.0), "full scale should not exceed 0 dB, was \(fullScale)")
+        XCTAssertTrue(fullScale > Float(-0.01), "full scale should be 0 dB, was \(fullScale)")
+
+        // A tenth of full scale is -20 dB, and half is about -6 dB.
+        let tenth = AVAudioRecorder.amplitudeToDecibels(3277)
+        XCTAssertTrue(tenth > Float(-20.1) && tenth < Float(-19.9), "expected about -20 dB, was \(tenth)")
+        let half = AVAudioRecorder.amplitudeToDecibels(16384)
+        XCTAssertTrue(half > Float(-6.1) && half < Float(-6.0), "expected about -6 dB, was \(half)")
+
+        // The scale is monotonic, so a louder sample never reports a lower power.
+        XCTAssertTrue(AVAudioRecorder.amplitudeToDecibels(100) < AVAudioRecorder.amplitudeToDecibels(1000))
+    }
+    #endif
+
     public func testAVPlayerAdditions() throws {
         let player = AVPlayer(url: videoURL)
 
