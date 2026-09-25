@@ -178,5 +178,15 @@ final class SkipAVTests: XCTestCase {
         player.seek(to: CMTime.zero, toleranceBefore: CMTime.zero, toleranceAfter: CMTime.zero)
         player.seek(to: CMTime.zero, toleranceBefore: CMTime.zero, toleranceAfter: CMTime.zero) { _ in
         }
+
+        // Exercise the live-edge (positiveInfinity) and non-numeric seek paths; they must not crash. (#19)
+        player.seek(to: CMTime.positiveInfinity)
+        player.seek(to: CMTime.positiveInfinity) { _ in
+        }
+        #if SKIP
+        // AVFoundation raises NSInvalidArgumentException for a non-numeric seek; only the Android path ignores it.
+        player.seek(to: CMTime.indefinite)
+        player.seek(to: CMTime.invalid)
+        #endif
     }
 }
